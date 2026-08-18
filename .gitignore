@@ -1,0 +1,15 @@
+# API key — ห้ามขึ้น git เด็ดขาด
+.env
+
+# ไฟล์งาน (เสียง, transcript, SRT)
+work/
+subtitle-work/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# macOS
+.DS_Store
