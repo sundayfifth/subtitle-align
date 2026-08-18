@@ -11,6 +11,7 @@
 """
 import argparse
 import json
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -163,7 +164,7 @@ def write_outputs(words: list[dict], cues: list[dict], d: Path) -> None:
         "# อยากแยกเป็นสองซับ     -> ใส่ | คั่นกลาง",
         "# ห้ามเพิ่มคำที่ไม่มีในเสียง (จะจับเวลาไม่ได้ ต้องใช้เวลาเดิมของก้อนแทน)",
         "#",
-        "# เสร็จแล้วรัน: python3 make_srt.py " + d.name,
+        "# เสร็จแล้วรัน: python3 make_srt.py " + shlex.quote(d.name),
         "",
     ]
     for i, c in enumerate(cues, 1):
@@ -211,7 +212,7 @@ def main() -> None:
     print()
     print(f"เสร็จ → {d}")
     print(f"  1. เปิด {d / 'edit.txt'} แล้วย่อคำตามต้องการ")
-    print(f"  2. รัน: python3 make_srt.py {name}")
+    print(f"  2. รัน: python3 make_srt.py {shlex.quote(name)}")
     if args.start:
         print(f"\n  หมายเหตุ: เวลาใน SRT นับ 0 ที่ {args.start} ของไฟล์ต้นฉบับ")
         print("  ใช้กับคลิปที่ตัดหัวท้ายมาจากช่วงนี้เท่านั้น — ถ้ามี jump cut ข้างใน")
