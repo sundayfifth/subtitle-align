@@ -20,13 +20,13 @@ from common import set_work_dir, fmt_ts, job_dir, load_api_key
 
 # ชื่อย่อ -> (model id, คำอธิบายที่ผู้ใช้ควรรู้ก่อนเลือก)
 GEMINI_MODELS = {
-    "pro": (
-        "gemini-pro-latest",
-        "แม่นสุด เขียนไทยล้วน เว้นวรรคตามจังหวะพูดดีที่สุด",
-    ),
     "flash": (
         "gemini-flash-latest",
-        "ฟรีชัดเจน เร็วกว่า แม่นเกือบเท่า pro แต่ชื่อแบรนด์มักออกมาเป็นภาษาอังกฤษ",
+        "อยู่ใน free tier แน่นอน เร็ว แม่นพอ — ชื่อแบรนด์มักออกมาเป็นภาษาอังกฤษ",
+    ),
+    "pro": (
+        "gemini-pro-latest",
+        "แม่นกว่านิดหน่อย เขียนไทยล้วน — แต่โควต้า free tier น้อยกว่า อาจมีค่าใช้จ่าย",
     ),
     "flash-lite": (
         "gemini-flash-lite-latest",
@@ -217,8 +217,8 @@ def main() -> None:
                    help="ตัดเฉพาะช่วง เริ่มที่ (เช่น 12:30) — เวลาใน SRT จะนับ 0 ที่จุดนี้")
     p.add_argument("--to", dest="end", metavar="เวลา",
                    help="ตัดเฉพาะช่วง จบที่ (เช่น 13:05)")
-    p.add_argument("--gemini-model", default="pro", metavar="ชื่อ",
-                   help="โมเดลที่ใช้ถอดข้อความ: pro (เริ่มต้น) / flash / flash-lite — ดูความต่างท้าย --help")
+    p.add_argument("--gemini-model", default="flash", metavar="ชื่อ",
+                   help="โมเดลที่ใช้ถอดข้อความ: flash (เริ่มต้น) / pro / flash-lite — ดูความต่างท้าย --help")
     p.add_argument("--model", default="medium", help="ขนาด Whisper: small/medium/large-v3 (เริ่มต้น medium)")
     p.add_argument("--device", default="cpu", help="cpu / mps / cuda (เริ่มต้น cpu — เสถียรสุดบน Mac)")
     p.add_argument("--max-chars", type=int, default=42, help="ตัวอักษรสูงสุดต่อซับหนึ่งก้อน")
