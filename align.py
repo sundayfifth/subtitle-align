@@ -224,6 +224,8 @@ def main() -> None:
     p.add_argument("--max-chars", type=int, default=42, help="ตัวอักษรสูงสุดต่อซับหนึ่งก้อน")
     p.add_argument("--max-gap", type=float, default=0.4, help="ช่วงเงียบ (วินาที) ที่ถือว่าให้ตัดก้อนใหม่")
     p.add_argument("--work", metavar="โฟลเดอร์", help="โฟลเดอร์เก็บงาน (เริ่มต้น: ./work)")
+    p.add_argument("--no-srt", action="store_true",
+                   help="หยุดที่ edit.txt ไม่ต้องสร้าง SRT ให้ (ใช้เมื่อจะย่อคำก่อน)")
     args = p.parse_args()
     set_work_dir(args.work)
 
@@ -245,11 +247,25 @@ def main() -> None:
     write_outputs(words, cues, d)
 
     print()
-    print(f"เสร็จ → {d}")
-    print(f"  1. เปิด {d / 'edit.txt'} แล้วย่อคำตามต้องการ")
-    print(f"  2. รัน: python3 make_srt.py {shlex.quote(name)}")
+    if args.no_srt:
+        print(f"เสร็จ → {d}")
+        print(f"  1. เปิด {d / 'edit.txt'} แล้วย่อคำตามต้องการ")
+        print(f"  2. รัน: python3 make_srt.py {shlex.quote(name)}")
+    else:
+        import make_srt
+        cues = make_srt.build(name, d)
+        srt = d / f"{name}.srt"
+        make_srt.write_srt(cues, srt)
+        print(f"เสร็จ → {srt}  ({len(cues)} ซับ)")
+        print("ลากเข้า CapCut ได้เลย")
+        print()
+        print("ถ้าอยากย่อคำให้สั้นลงกว่าที่พูด เลือกได้ 2 ทาง:")
+        print("  • แก้ไม่กี่ก้อน — ตัดใน CapCut ได้เลย")
+        print("    แต่ต้องลากขอบซับให้ตรงคำที่เหลือด้วย ไม่งั้นจะขึ้นเร็วไปตามเวลาเดิมของก้อน")
+        print(f"  • ย่อทั้งคลิป — แก้ {d / 'edit.txt'} แล้วรัน")
+        print(f"    python3 make_srt.py {shlex.quote(name)}   (เวลาคำนวณใหม่ให้อัตโนมัติ)")
     if args.start:
-        print(f"\n  หมายเหตุ: เวลาใน SRT นับ 0 ที่ {args.start} ของไฟล์ต้นฉบับ")
+        print(f"\nหมายเหตุ: เวลาใน SRT นับ 0 ที่ {args.start} ของไฟล์ต้นฉบับ")
         print("  ใช้กับคลิปที่ตัดหัวท้ายมาจากช่วงนี้เท่านั้น — ถ้ามี jump cut ข้างใน")
         print("  ต้อง export คลิปที่ตัดเสร็จแล้วมา align ใหม่")
 

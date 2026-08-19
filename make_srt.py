@@ -17,6 +17,21 @@ from common import set_work_dir, build_char_timeline, fmt_ts, job_dir, load_word
 
 HEADER_RE = re.compile(r"^\[(\d+)\]\s+([\d:.]+)\s*→\s*([\d:.]+)\s*$")
 
+# ค่าเริ่มต้นของจังหวะซับ — align.py ใช้ชุดเดียวกันตอนสร้าง SRT ให้อัตโนมัติ
+DEFAULTS = {"min_dur": 0.7, "lead": 0.06, "tail": 0.18, "gap": 0.04, "window_pad": 0.6}
+
+
+def build(name: str, d) -> list[dict]:
+    """edit.txt + words.json -> รายการ cue ที่พร้อมเขียนเป็น SRT"""
+    words = load_words(name)
+    hay, cs, ce = build_index(words)
+    edit_cues = parse_edit(d / "edit.txt")
+    if not edit_cues:
+        raise SystemExit("ไม่มีข้อความเหลือใน edit.txt เลย")
+    cues = build_cues(edit_cues, hay, cs, ce, DEFAULTS["window_pad"])
+    return polish(cues, DEFAULTS["min_dur"], DEFAULTS["lead"], DEFAULTS["tail"],
+                  DEFAULTS["gap"], audio_duration(d, words))
+
 
 def parse_ts(s: str) -> float:
     h, m, rest = s.split(":")
@@ -151,11 +166,11 @@ def main() -> None:
     p = argparse.ArgumentParser(description="สร้าง SRT จากไฟล์ที่ย่อคำแล้ว")
     p.add_argument("name", help="ชื่องานใน work/")
     p.add_argument("-o", "--out", help="path ไฟล์ .srt (เริ่มต้น: work/<name>/<name>.srt)")
-    p.add_argument("--min-dur", type=float, default=0.7, help="ความยาวขั้นต่ำต่อซับ (วินาที)")
-    p.add_argument("--lead", type=float, default=0.06, help="เผื่อเวลาก่อนคำแรก (วินาที)")
-    p.add_argument("--tail", type=float, default=0.18, help="เผื่อเวลาหลังคำสุดท้าย (วินาที)")
-    p.add_argument("--gap", type=float, default=0.04, help="ช่องว่างขั้นต่ำระหว่างซับสองก้อน")
-    p.add_argument("--window-pad", type=float, default=0.6, help="ขยายกรอบค้นหาของแต่ละก้อน (วินาที)")
+    p.add_argument("--min-dur", type=float, default=DEFAULTS["min_dur"], help="ความยาวขั้นต่ำต่อซับ (วินาที)")
+    p.add_argument("--lead", type=float, default=DEFAULTS["lead"], help="เผื่อเวลาก่อนคำแรก (วินาที)")
+    p.add_argument("--tail", type=float, default=DEFAULTS["tail"], help="เผื่อเวลาหลังคำสุดท้าย (วินาที)")
+    p.add_argument("--gap", type=float, default=DEFAULTS["gap"], help="ช่องว่างขั้นต่ำระหว่างซับสองก้อน")
+    p.add_argument("--window-pad", type=float, default=DEFAULTS["window_pad"], help="ขยายกรอบค้นหาของแต่ละก้อน (วินาที)")
     p.add_argument("--work", metavar="โฟลเดอร์", help="โฟลเดอร์เก็บงาน (เริ่มต้น: ./work)")
     args = p.parse_args()
     set_work_dir(args.work)
