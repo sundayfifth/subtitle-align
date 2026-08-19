@@ -18,7 +18,28 @@ from pathlib import Path
 
 from common import set_work_dir, fmt_ts, job_dir, load_api_key
 
-GEMINI_MODEL = "gemini-pro-latest"
+# ชื่อย่อ -> (model id, คำอธิบายที่ผู้ใช้ควรรู้ก่อนเลือก)
+GEMINI_MODELS = {
+    "pro": (
+        "gemini-pro-latest",
+        "แม่นสุด เขียนไทยล้วน เว้นวรรคตามจังหวะพูดดีที่สุด",
+    ),
+    "flash": (
+        "gemini-flash-latest",
+        "ฟรีชัดเจน เร็วกว่า แม่นเกือบเท่า pro แต่ชื่อแบรนด์มักออกมาเป็นภาษาอังกฤษ",
+    ),
+    "flash-lite": (
+        "gemini-flash-lite-latest",
+        "เร็วสุดแต่ไม่แนะนำ — มักไม่เว้นวรรคและเขียนตัวเลขเป็นเลขอารบิก ทำให้แบ่งก้อนซับพลาด",
+    ),
+}
+
+
+def resolve_model(choice: str) -> tuple[str, str]:
+    """รับชื่อย่อหรือ model id เต็มก็ได้"""
+    if choice in GEMINI_MODELS:
+        return GEMINI_MODELS[choice]
+    return choice, "(model id ที่ระบุเอง)"
 
 PROMPT = (
     "ถอดเสียงภาษาไทยในไฟล์นี้แบบคำต่อคำ ทุกคำที่ได้ยินจริง รวมคำอุทาน เสียงเอ่อ อ้า "
@@ -71,7 +92,7 @@ def extract_audio(video: Path, out: Path, start: str | None, end: str | None) ->
     subprocess.run(cmd + ["-vn", "-ac", "1", "-ar", "16000", str(out)], check=True)
 
 
-def transcribe(audio: Path, out: Path) -> str:
+def transcribe(audio: Path, out: Path, model_choice: str) -> str:
     if out.exists() and out.read_text().strip():
         print(f"[2/4] มี {out.name} อยู่แล้ว ข้าม (ลบไฟล์ถ้าอยากถอดใหม่)")
         return out.read_text()
@@ -79,13 +100,15 @@ def transcribe(audio: Path, out: Path) -> str:
     from google import genai
     from google.genai import types
 
-    print(f"[2/4] ส่งให้ Gemini ({GEMINI_MODEL}) ถอดข้อความ")
+    model_id, note = resolve_model(model_choice)
+    print(f"[2/4] ส่งให้ Gemini ถอดข้อความ — {model_choice} ({model_id})")
+    print(f"      {note}")
     client = genai.Client(
         api_key=load_api_key(),
         http_options=types.HttpOptions(timeout=10 * 60 * 1000),
     )
     uploaded = client.files.upload(file=str(audio))
-    resp = client.models.generate_content(model=GEMINI_MODEL, contents=[uploaded, PROMPT])
+    resp = client.models.generate_content(model=model_id, contents=[uploaded, PROMPT])
     text = (resp.text or "").strip()
     if not text:
         raise SystemExit("Gemini ตอบกลับว่าง — ลองรันใหม่")
@@ -177,13 +200,25 @@ def write_outputs(words: list[dict], cues: list[dict], d: Path) -> None:
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="ถอดเสียงด้วย Gemini แล้ว align กับเสียงจริง")
+    p = argparse.ArgumentParser(
+        description="ถอดเสียงด้วย Gemini แล้ว align กับเสียงจริง",
+        epilog=(
+            "โมเดลที่ใช้ถอดข้อความ (--gemini-model):\n"
+            + "".join(f"  {k:<11} {v[1]}\n" for k, v in GEMINI_MODELS.items())
+            + "  หรือใส่ model id เต็มเองก็ได้ เช่น gemini-2.5-flash\n\n"
+            "โมเดลมีผลแค่ 'ข้อความ' — ส่วน 'เวลา' มาจาก Whisper บนเครื่องนี้เสมอ\n"
+            "ถ้าเปลี่ยนโมเดลแล้วอยากถอดใหม่ ต้องลบ transcript.txt ของงานนั้นก่อน"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     p.add_argument("video", help="ไฟล์วิดีโอหรือไฟล์เสียง")
     p.add_argument("--name", help="ชื่อโฟลเดอร์งานใน work/ (ค่าเริ่มต้น: ชื่อไฟล์ + ช่วงเวลา)")
     p.add_argument("--from", dest="start", metavar="เวลา",
                    help="ตัดเฉพาะช่วง เริ่มที่ (เช่น 12:30) — เวลาใน SRT จะนับ 0 ที่จุดนี้")
     p.add_argument("--to", dest="end", metavar="เวลา",
                    help="ตัดเฉพาะช่วง จบที่ (เช่น 13:05)")
+    p.add_argument("--gemini-model", default="pro", metavar="ชื่อ",
+                   help="โมเดลที่ใช้ถอดข้อความ: pro (เริ่มต้น) / flash / flash-lite — ดูความต่างท้าย --help")
     p.add_argument("--model", default="medium", help="ขนาด Whisper: small/medium/large-v3 (เริ่มต้น medium)")
     p.add_argument("--device", default="cpu", help="cpu / mps / cuda (เริ่มต้น cpu — เสถียรสุดบน Mac)")
     p.add_argument("--max-chars", type=int, default=42, help="ตัวอักษรสูงสุดต่อซับหนึ่งก้อน")
@@ -205,7 +240,7 @@ def main() -> None:
     audio = d / "audio.flac"
 
     extract_audio(video, audio, args.start, args.end)
-    text = transcribe(audio, d / "transcript.txt")
+    text = transcribe(audio, d / "transcript.txt", args.gemini_model)
     words, cues = align(audio, text, args.model, args.device, args.max_chars, args.max_gap)
     write_outputs(words, cues, d)
 
