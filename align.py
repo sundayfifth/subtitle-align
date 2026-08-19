@@ -221,8 +221,8 @@ def main() -> None:
                    help="โมเดลที่ใช้ถอดข้อความ: flash (เริ่มต้น) / pro / flash-lite — ดูความต่างท้าย --help")
     p.add_argument("--model", default="medium", help="ขนาด Whisper: small/medium/large-v3 (เริ่มต้น medium)")
     p.add_argument("--device", default="cpu", help="cpu / mps / cuda (เริ่มต้น cpu — เสถียรสุดบน Mac)")
-    p.add_argument("--max-chars", type=int, default=42, help="ตัวอักษรสูงสุดต่อซับหนึ่งก้อน")
-    p.add_argument("--max-gap", type=float, default=0.4, help="ช่วงเงียบ (วินาที) ที่ถือว่าให้ตัดก้อนใหม่")
+    p.add_argument("--max-chars", type=int, default=42, help="ตัวอักษรสูงสุดต่อซับหนึ่งก้อน (เริ่มต้น %(default)s)")
+    p.add_argument("--max-gap", type=float, default=0.4, help="ช่วงเงียบ (วินาที) ที่ถือว่าให้ตัดก้อนใหม่ (เริ่มต้น %(default)s)")
     p.add_argument("--work", metavar="โฟลเดอร์", help="โฟลเดอร์เก็บงาน (เริ่มต้น: ./work)")
     p.add_argument("--no-srt", action="store_true",
                    help="หยุดที่ edit.txt ไม่ต้องสร้าง SRT ให้ (ใช้เมื่อจะย่อคำก่อน)")
