@@ -12,10 +12,9 @@
 ```
 ช่วยติดตั้ง subtitle-align ให้หน่อย
 
-repo (เป็น private): https://github.com/sundayfifth/subtitle-align
+repo: https://github.com/sundayfifth/subtitle-align
 clone ไปที่ ~/.claude/skills/subtitle-align
 
-ถ้าเครื่องนี้ยังไม่ได้ login GitHub ช่วยพาทำก่อน
 แล้วลง dependency จาก requirements.txt กับเช็คว่ามี ffmpeg ไหม ถ้าไม่มีช่วยลงให้
 บอกด้วยว่าแต่ละขั้นใช้เวลากับพื้นที่ประมาณเท่าไร จะได้ไม่นึกว่าเครื่องค้าง
 
